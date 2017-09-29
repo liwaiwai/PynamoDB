@@ -746,9 +746,13 @@ class MapAttribute(Attribute, AttributeContainer):
             attr_class = self._get_deserialize_class(key, v)
             deserialized_value = None
             if attr_value is not None:
-                deserialized_value = attr_class.deserialize(attr_value)
+                try:
+                    deserialized_value = attr_class.deserialize(attr_value)
+                except Exception, e:
+                    pass
 
-            deserialized_dict[key] = deserialized_value
+            if (deserialized_value is not None):
+                deserialized_dict[key] = deserialized_value
 
         # If this is a subclass of a MapAttribute (i.e typed), instantiate an instance
         if not self.is_raw():
