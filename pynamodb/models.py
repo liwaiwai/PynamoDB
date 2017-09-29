@@ -667,20 +667,23 @@ class Model(AttributeContainer):
                 if limit == 0:
                     return
                 limit -= 1
-            yield cls.from_raw_data(item)
+            yield (cls.from_raw_data(item), last_evaluated_key)
+
+        if (0 == limit):
+            return
 
         while last_evaluated_key:
             query_kwargs['exclusive_start_key'] = last_evaluated_key
             log.debug("Fetching query page with exclusive start key: %s", last_evaluated_key)
             data = cls._get_connection().query(hash_key, **query_kwargs)
             cls._throttle.add_record(data.get(CONSUMED_CAPACITY))
+            last_evaluated_key = data.get(LAST_EVALUATED_KEY, None)
             for item in data.get(ITEMS):
                 if limit is not None:
                     if limit == 0:
                         return
                     limit -= 1
-                yield cls.from_raw_data(item)
-            last_evaluated_key = data.get(LAST_EVALUATED_KEY, None)
+                yield (cls.from_raw_data(item), last_evaluated_key)
 
     @classmethod
     def rate_limited_scan(cls,
